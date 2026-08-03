@@ -59,7 +59,9 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
 ### Download Model
 
-Model weights are not distributed with this repository. You can choose either of the two ways to fetch the models:
+Model weights are not bundled with the code due to repository size constraints; they must be downloaded separately. You can fetch the models using any of the following three methods:
+
+- **Download through** [Release](https://github.com/lionking0921/fursee/releases/download/v1.0.0/fursee_models.zip) **(recommended)**.
 
 - **Download via** [Quark Cloud Disk](https://pan.quark.cn/s/c6f4b595d67e)**.**
 - **Download by joining our QQ group** [1050477921](https://qm.qq.com/q/W4eKZHXDqu) to download the weights **from the group files.**

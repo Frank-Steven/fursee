@@ -59,7 +59,9 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
 ### 下载模型
 
-由于仓库大小有限，模型文件并不存在于本仓库中，您可通过下列任意一种方式下载权重:
+由于仓库大小限制，模型权重并不会随着代码一起下载，需要另行拉取。您可通过下列任意一种方式下载权重:
+
+- **直接通过**[Release链接](https://github.com/lionking0921/fursee/releases/download/v1.0.0/fursee_models.zip)**下载（推荐）。**
 
 - **通过**[夸克网盘](https://pan.quark.cn/s/c6f4b595d67e)**下载。**
 - **加入QQ群**[1050477921](https://qm.qq.com/q/W4eKZHXDqu)**从群文件里下载。**
