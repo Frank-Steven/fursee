@@ -147,7 +147,7 @@ python db.py append --input-folder PATH_TO_YOUR_IMAGES
 
 ### 图片聚类
 
-**使用场景：**按角色进行返图自动分类。
+**使用场景：** 按角色进行返图自动分类。
 
 请执行：
 
@@ -229,9 +229,9 @@ output/similar/
 
 该脚本支持以下清理范围：
 
-- **`output`：**清空输出目录（`output/classify`、`output/identify`、`output/similar`）。
-- **`buffer`：**清空缓存目录。
-- **`all`：**清空程序使用的全部目录，包含输入缓存与输出结果。
+- **`output`：** 清空输出目录（`output/classify`、`output/identify`、`output/similar`）。
+- **`buffer`：** 清空缓存目录。
+- **`all`：** 清空程序使用的全部目录，包含输入缓存与输出结果。
 
 在命令行运行该脚本，并传入目标范围作为参数。
 
