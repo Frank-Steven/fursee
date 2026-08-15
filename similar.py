@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from PIL import Image
 
+from utils.clustering import build_augmented_bundles
 from utils.common import find_original_image, get_device, get_model_assets_path, reset_directory
 from utils.detection import crop_largest_furry_targets
 from utils.embedding import load_stage2_model
@@ -86,20 +87,44 @@ def unique_folder_name(used_names, folder_name):
     return unique_name
 
 
-def copy_topk_for_reference(db, ref_item, query_folder, input_root, k):
+def build_search_items(db, use_augmentation=True):
+    vectors = db.normalized_vectors()
+    if use_augmentation:
+        keys, search_vectors, _, _ = build_augmented_bundles(
+            db.keys,
+            vectors,
+            db.metadata,
+        )
+    else:
+        original_indices = np.where(~db.is_augmented_mask())[0]
+        keys = [db.keys[int(index)] for index in original_indices]
+        search_vectors = vectors[original_indices]
+
+    return keys, search_vectors
+
+
+def top_k_from_vectors(query_vector, vectors, k):
+    if k <= 0 or vectors.shape[0] == 0:
+        return np.array([], dtype=np.int64), np.array([], dtype=np.float32)
+
+    query = np.asarray(query_vector, dtype=np.float32).reshape(1, -1)
+    query = query / (np.linalg.norm(query, axis=1, keepdims=True) + 1e-8)
+    similarities = np.dot(vectors, query[0])
+    top_indices = np.argsort(similarities)[::-1][:k]
+    return top_indices, similarities[top_indices]
+
+
+def copy_topk_for_reference(search_keys, search_vectors, ref_item, query_folder, input_root, k):
     if k <= 0:
         return 0
 
-    include_mask = ~db.is_augmented_mask()
-    candidate_count = int(np.count_nonzero(include_mask))
-    top_k_indices, similarities = db.top_k(ref_item["vector"], candidate_count, include_mask=include_mask)
+    top_k_indices, similarities = top_k_from_vectors(ref_item["vector"], search_vectors, len(search_keys))
     copied_sources = set()
     copied_count = 0
 
     for idx, similarity_score in zip(top_k_indices, similarities):
         idx = int(idx)
-        metadata = db.metadata[idx]
-        key = metadata.get("source_key", db.keys[idx])
+        key = search_keys[idx]
         src_path = find_original_image(key, input_root)
         if not src_path:
             print(f"Original image not found for feature key: {key} (score={similarity_score:.4f})")
@@ -133,10 +158,15 @@ def stage3_topk(
     input_root=DEFAULT_INPUT_FOLDER,
     output_folder=DEFAULT_OUTPUT_FOLDER,
     k=60,
+    use_augmentation=True,
 ):
     print(f"Starting stage 3: running per-query Top-{k} search.")
 
     db = VectorDatabase.load_auto(buffer_folder, preferred_name=db_name)
+    search_keys, search_vectors = build_search_items(db, use_augmentation=use_augmentation)
+    if len(search_keys) == 0:
+        raise ValueError("Feature database has no original vectors to search.")
+
     reset_directory(output_folder)
     print(f"Organizing Top-{k} results into {output_folder}.")
 
@@ -147,7 +177,8 @@ def stage3_topk(
         query_folder = os.path.join(output_folder, folder_name)
         os.makedirs(query_folder, exist_ok=True)
         copied_count = copy_topk_for_reference(
-            db,
+            search_keys,
+            search_vectors,
             ref_item,
             query_folder,
             input_root,
@@ -171,6 +202,8 @@ def build_parser():
     parser.add_argument("--target-buffer-folder", default=DEFAULT_TARGET_BUFFER)
     parser.add_argument("--output-folder", default=DEFAULT_OUTPUT_FOLDER)
     parser.add_argument("--k", type=int, default=1)
+    parser.add_argument("--no-augmentation", dest="use_augmentation", action="store_false")
+    parser.set_defaults(use_augmentation=True)
 
     parser.add_argument("--model-path", default=None)
     parser.add_argument("--conf", type=float, default=0.5)
@@ -200,6 +233,7 @@ def main():
         input_root=args.input_folder,
         output_folder=args.output_folder,
         k=args.k,
+        use_augmentation=args.use_augmentation,
     )
 
 
